@@ -14,6 +14,7 @@ try:
     import sys
 
     import redis
+    import os
 
     from . import eeprom_base    # Dot module supports both Python 2 and Python 3 using explicit relative import methods
 except ImportError as e:
@@ -649,9 +650,12 @@ class TlvInfoDecoder(eeprom_base.EepromDecoder):
             A redis client instance
         """
         if not self._redis_client:
-            password = read_from_file('/etc/shadow_redis_dir/shadow_redis_admin')
-            redis_shadow_tls_ca="/etc/shadow_redis_dir/certs_redis/ca.crt"
-            self._redis_client = redis.Redis(port=6379, db=STATE_DB_INDEX, username=USERNAME, password=password, ssl=True, ssl_cert_reqs=None, ssl_ca_certs=redis_shadow_tls_ca)
+            if os.path.exists('/etc/shadow_redis_dir/shadow_redis_admin'):
+                password = read_from_file('/etc/shadow_redis_dir/shadow_redis_admin')
+                redis_shadow_tls_ca="/etc/shadow_redis_dir/certs_redis/ca.crt"
+                self._redis_client = redis.Redis(port=6379, db=STATE_DB_INDEX, username=USERNAME, password=password, ssl=True, ssl_cert_reqs=None, ssl_ca_certs=redis_shadow_tls_ca)
+            else:
+                self._redis_client = redis.Redis(db=STATE_DB_INDEX)
         return self._redis_client
 
     def _redis_hget(self, key, field):
